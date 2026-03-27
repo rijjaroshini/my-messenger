@@ -8,62 +8,46 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     
     <style>
-        :root {
-            --primary: #FF7F50; 
-            --bg: #FFF8F0; 
-            --light: #fff;
-            --text-main: #5D4037;
-        }
-
+        :root { --primary: #FF7F50; --bg: #FFF8F0; --light: #fff; --text-main: #5D4037; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); height: 100vh; display: flex; color: var(--text-main); }
-        
         .sidebar { width: 300px; background: var(--light); border-right: 1px solid #eee; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
         .sidebar-header { padding: 25px 20px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
-        .user-card { padding: 20px; background: #FFF3E0; border-left: 6px solid var(--primary); margin: 15px; border-radius: 12px; cursor: pointer; transition: 0.3s; }
-
+        .user-card { padding: 20px; background: #FFF3E0; border-left: 6px solid var(--primary); margin: 15px; border-radius: 12px; cursor: pointer; }
         .main-chat { flex: 1; display: flex; flex-direction: column; background: var(--light); position: relative; }
-        .chat-header { padding: 18px 30px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: white; z-index: 10; }
-        
+        .chat-header { padding: 18px 30px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: white; }
         #msg-container { flex: 1; padding: 30px; overflow-y: auto; background: #FFFAF5; display: flex; flex-direction: column; gap: 15px; }
-
         .msg-wrapper { display: flex; flex-direction: column; max-width: 75%; }
         .customer-wrapper { align-self: flex-start; }
         .admin-wrapper { align-self: flex-end; }
-
         .meta-info { font-size: 12px; color: #A1887F; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
         .bubble { padding: 14px 18px; border-radius: 20px; font-size: 15px; line-height: 1.5; box-shadow: 0 2px 4px rgba(0,0,0,0.06); }
-        
-        .customer-bubble { background: white; color: var(--text-main); border: 1px solid #eee; border-top-left-radius: 5px; }
-        .admin-bubble { background: linear-gradient(135deg, #FF7F50, #FF6347); color: white; border-top-right-radius: 5px; box-shadow: 0 4px 10px rgba(255,127,80,0.3); }
-
-        .chat-footer { padding: 18px 30px; border-top: 1px solid #eee; display: flex; gap: 12px; background: white; align-items: center; }
-        #reply-input { flex: 1; padding: 14px 22px; border-radius: 30px; border: 1px solid #f0f0f0; outline: none; font-size: 16px; background: #FFFBF5; }
-        
+        .customer-bubble { background: white; border: 1px solid #eee; border-top-left-radius: 5px; }
+        .admin-bubble { background: linear-gradient(135deg, #FF7F50, #FF6347); color: white; border-top-right-radius: 5px; }
+        .chat-footer { padding: 18px 30px; border-top: 1px solid #eee; display: flex; gap: 12px; background: white; }
+        #reply-input { flex: 1; padding: 14px 22px; border-radius: 30px; border: 1px solid #f0f0f0; outline: none; background: #FFFBF5; }
         .send-btn { background: linear-gradient(135deg, #FF7F50, #FF6347); color: white; border: none; padding: 12px 30px; border-radius: 30px; cursor: pointer; font-weight: bold; }
-        .delete-btn { background: #FFEBEE; color: #D32F2F; border: 1px solid #FFCDD2; padding: 9px 18px; border-radius: 30px; cursor: pointer; font-size: 13px; font-weight: bold; }
+        .delete-btn { background: #FFEBEE; color: #D32F2F; border: 1px solid #FFCDD2; padding: 9px 18px; border-radius: 30px; cursor: pointer; font-size: 13px; }
     </style>
 </head>
-<body>
+<body onclick="enableAudio()">
 
     <div class="sidebar">
         <div class="sidebar-header">
             <h3>Chats ❤️</h3>
             <button class="delete-btn" onclick="clearChat()">Delete 🗑️</button>
         </div>
-        <div class="user-card">
-            <strong>Active Client 😊</strong><br>
-            <small>Live Support Hub</small>
+        <div class="user-card" onclick="askPermission()">
+            <strong>Enable Alerts 🔔</strong><br>
+            <small>Tap here for notifications</small>
         </div>
     </div>
 
     <div class="main-chat">
         <div class="chat-header">
-            <div id="active-user-info" style="font-size:18px; font-weight:600;">Human-to-Human Chat 🤝</div>
-            <div style="color: #2ecc71; font-size: 14px;">● We're Online!</div>
+            <div style="font-size:18px; font-weight:600;">Human-to-Human Chat 🤝</div>
+            <div id="notif-status" style="color: #e67e22; font-size: 12px;">Click Sidebar to Enable Alerts</div>
         </div>
-
         <div id="msg-container"></div>
-
         <div class="chat-footer">
             <input type="text" id="reply-input" placeholder="Type with kindness... ❤️">
             <button class="send-btn" onclick="sendReply()">Send 😊</button>
@@ -79,31 +63,66 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     
-    const notifySound = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
+    // نوٹیفکیشن ساؤنڈ
+    const notifySound = new Audio('https://notificationsounds.com/storage/sounds/file-sounds-1150-pristine.mp3');
     let isFirstLoad = true;
+    let audioReady = false;
+
+    // آواز ایکٹیویٹ کرنے کے لیے
+    function enableAudio() {
+        if(!audioReady) {
+            notifySound.play().then(() => {
+                notifySound.pause();
+                notifySound.currentTime = 0;
+                audioReady = true;
+            });
+        }
+    }
+
+    // پاپ اپ اجازت مانگنا
+    function askPermission() {
+        Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+                document.getElementById('notif-status').innerText = "● Alerts Active";
+                document.getElementById('notif-status').style.color = "#2ecc71";
+                alert("Notifications Enabled! 😊");
+            }
+        });
+    }
 
     db.ref('public_chat').on('value', (snapshot) => {
         const container = document.getElementById('msg-container');
         container.innerHTML = ''; 
-        let lastMsgFrom = "";
+        let lastMsg = null;
 
         snapshot.forEach((child) => {
-            const data = child.val();
-            const isAdmin = data.sender === 'admin';
-            lastMsgFrom = data.sender;
-            
-            const flagHtml = data.flag && data.flag.includes('http') ? `<img src="${data.flag}" width="16">` : (data.flag || "🏳️");
-            const senderName = isAdmin ? "You ❤️" : `${flagHtml} ${data.name || 'Kind Guest'}`;
+            lastMsg = child.val();
+            const isAdmin = lastMsg.sender === 'admin';
+            const flagHtml = lastMsg.flag && lastMsg.flag.includes('http') ? `<img src="${lastMsg.flag}" width="16">` : (lastMsg.flag || "🏳️");
+            const senderName = isAdmin ? "You ❤️" : `${flagHtml} ${lastMsg.name || 'Kind Guest'}`;
 
             container.innerHTML += `
                 <div class="msg-wrapper ${isAdmin ? 'admin-wrapper' : 'customer-wrapper'}">
                     <div class="meta-info">${senderName}</div>
-                    <div class="bubble ${isAdmin ? 'admin-bubble' : 'customer-bubble'}">${data.text}</div>
+                    <div class="bubble ${isAdmin ? 'admin-bubble' : 'customer-bubble'}">${lastMsg.text}</div>
                 </div>`;
         });
 
-        if (!isFirstLoad && lastMsgFrom === 'customer') {
-            notifySound.play().catch(e => console.log("Sound error: ", e));
+        // اگر کسٹمر کا میسج آئے تو الرٹ دیں
+        if (!isFirstLoad && lastMsg && lastMsg.sender === 'customer') {
+            // 1. آواز چلائیں
+            notifySound.play().catch(e => console.log("Audio play blocked"));
+            
+            // 2. موبائل وائبریٹ کریں
+            if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+
+            // 3. پاپ اپ نوٹس (اگر ایپ بیک گراؤنڈ میں ہے)
+            if (Notification.permission === "granted") {
+                new Notification("New Message from " + (lastMsg.name || "Guest"), {
+                    body: lastMsg.text,
+                    icon: "https://cdn-icons-png.flaticon.com/512/134/134914.png"
+                });
+            }
         }
         isFirstLoad = false;
         container.scrollTop = container.scrollHeight;
@@ -111,21 +130,13 @@
 
     function sendReply() {
         const input = document.getElementById('reply-input');
-        const text = input.value;
-        if (!text.trim()) return;
-
-        db.ref('public_chat').push({
-            text: text,
-            sender: 'admin',
-            time: Date.now()
-        });
+        if (!input.value.trim()) return;
+        db.ref('public_chat').push({ text: input.value, sender: 'admin', time: Date.now() });
         input.value = '';
     }
 
     function clearChat() {
-        if(confirm("Are you sure you want to delete all chat history? 🗑️")) {
-            db.ref('public_chat').remove();
-        }
+        if(confirm("Clear all history? 🗑️")) db.ref('public_chat').remove();
     }
 
     document.getElementById('reply-input').addEventListener("keypress", (e) => {
