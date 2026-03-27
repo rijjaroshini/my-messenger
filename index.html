@@ -3,121 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Pro | Messenger 🚀</title>
+    <title>Admin Panel | Separate Chats 👤</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     
     <style>
-        :root { --primary: #FF7F50; --bg: #f0f2f5; --white: #ffffff; --text: #444; }
-        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); height: 100vh; display: flex; flex-direction: column; }
+        :root { --primary: #FF7F50; --bg: #f5f7f9; --white: #ffffff; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); height: 100vh; display: flex; overflow: hidden; }
         
-        /* Header */
-        header { background: linear-gradient(135deg, #FF7F50, #FF6347); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .header-title { font-size: 20px; font-weight: bold; }
-        .delete-btn { background: rgba(255,255,255,0.2); border: 1px solid white; color: white; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 13px; transition: 0.3s; }
-        .delete-btn:hover { background: white; color: #FF6347; }
+        /* Sidebar for User List */
+        #sidebar { width: 300px; background: var(--white); border-right: 1px solid #ddd; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px; background: var(--primary); color: white; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        #user-list { flex: 1; overflow-y: auto; }
+        .user-card { padding: 15px 20px; border-bottom: 1px solid #eee; cursor: pointer; transition: 0.3s; position: relative; }
+        .user-card:hover { background: #fff5f0; }
+        .user-card.active { background: #ffe0d5; border-left: 5px solid var(--primary); }
+        .unread-dot { position: absolute; right: 15px; top: 20px; width: 10px; height: 10px; background: red; border-radius: 50%; display: none; }
 
-        /* Chat Container */
-        #chat-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
-        .msg { max-width: 80%; padding: 12px 16px; border-radius: 18px; font-size: 15px; line-height: 1.4; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .admin-msg { align-self: flex-end; background: #FF7F50; color: white; border-bottom-right-radius: 4px; }
-        .customer-msg { align-self: flex-start; background: var(--white); color: var(--text); border-bottom-left-radius: 4px; }
-        .msg-info { font-size: 11px; margin-bottom: 4px; opacity: 0.8; display: block; }
-
-        /* Footer Input */
-        footer { background: var(--white); padding: 15px; display: flex; gap: 10px; align-items: center; border-top: 1px solid #ddd; }
-        #admin-input { flex: 1; padding: 12px 20px; border-radius: 25px; border: 1px solid #ddd; outline: none; background: #f9f9f9; }
-        #send-btn { background: #FF7F50; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        /* Main Chat Area */
+        #main-chat { flex: 1; display: flex; flex-direction: column; background: #fafafa; }
+        #chat-header { padding: 15px 25px; background: white; border-bottom: 1px solid #ddd; font-weight: bold; display: flex; justify-content: space-between; }
+        #chat-window { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
         
-        /* Alert Banner */
-        .alert-banner { background: #FFF3E0; color: #E65100; padding: 10px; text-align: center; font-size: 13px; border-bottom: 1px solid #FFE0B2; cursor: pointer; }
+        /* Bubbles */
+        .msg { max-width: 70%; padding: 10px 15px; border-radius: 15px; font-size: 14px; position: relative; }
+        .admin-msg { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 2px; }
+        .customer-msg { align-self: flex-start; background: #eee; color: #333; border-bottom-left-radius: 2px; }
+
+        /* Footer */
+        footer { padding: 15px; background: white; border-top: 1px solid #ddd; display: flex; gap: 10px; }
+        #admin-input { flex: 1; padding: 10px 20px; border-radius: 25px; border: 1px solid #ddd; outline: none; }
+        #send-btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 25px; cursor: pointer; }
     </style>
 </head>
-<body onclick="initAudio()">
+<body onclick="enableSound()">
 
-    <header>
-        <div class="header-title">Admin Messenger 🤝</div>
-        <button class="delete-btn" onclick="deleteHistory()">Delete History 🗑️</button>
-    </header>
-
-    <div class="alert-banner" onclick="Notification.requestPermission()">
-        🔔 Click here to Enable Alerts & Sound
+<div id="sidebar">
+    <div class="sidebar-header">
+        <span>Chats 💬</span>
+        <button onclick="clearAll()" style="font-size: 10px; background: none; border: 1px solid white; color: white; cursor: pointer; border-radius: 5px;">Clear All</button>
     </div>
+    <div id="user-list">
+        </div>
+</div>
 
-    <div id="chat-box"></div>
-
-    <footer>
-        <input type="text" id="admin-input" placeholder="Type your message here...">
-        <button id="send-btn" onclick="sendMsg()">➤</button>
+<div id="main-chat">
+    <div id="chat-header">
+        <span id="current-user-name">Select a Chat</span>
+    </div>
+    <div id="chat-window">
+        </div>
+    <footer id="chat-footer" style="display: none;">
+        <input type="text" id="admin-input" placeholder="Type a message...">
+        <button id="send-btn" onclick="sendReply()">Send</button>
     </footer>
+</div>
 
 <script>
-    const firebaseConfig = {
+    const fbConfig = {
         apiKey: "AIzaSyCSpUoYUJH17_IrWNpzQj@ME-6Ri_n5-jQ",
         databaseURL: "https://chat-1dd78-default-rtdb.firebaseio.com",
         projectId: "chat-1dd78",
     };
-    firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(fbConfig);
     const db = firebase.database();
     
+    let activeUser = null;
+    let allData = {};
     const notifySound = new Audio('https://notificationsounds.com/storage/sounds/file-sounds-1150-pristine.mp3');
-    let isFirstLoad = true;
 
-    function initAudio() {
-        notifySound.play().then(() => { notifySound.pause(); notifySound.currentTime = 0; });
-    }
+    function enableSound() { notifySound.play().then(() => { notifySound.pause(); notifySound.currentTime = 0; }); }
 
-    // میسجز دکھانا
+    // ڈیٹا لوڈ کرنا
     db.ref('public_chat').on('value', (snapshot) => {
-        const chatBox = document.getElementById('chat-box');
-        chatBox.innerHTML = '';
-        let lastMsg = null;
-
-        snapshot.forEach((child) => {
-            lastMsg = child.val();
-            const isAdmin = lastMsg.sender === 'admin';
-            const name = isAdmin ? "You" : (lastMsg.name || "Customer");
-            
-            chatBox.innerHTML += `
-                <div class="msg ${isAdmin ? 'admin-msg' : 'customer-msg'}">
-                    <span class="msg-info">${name}</span>
-                    ${lastMsg.text}
-                </div>`;
-        });
-
-        // الرٹ لاجک
-        if (!isFirstLoad && lastMsg && lastMsg.sender === 'customer') {
-            notifySound.play().catch(() => {});
-            if (Notification.permission === "granted") {
-                new Notification("Naya Message! 💬", { body: lastMsg.text });
-            }
-        }
-        isFirstLoad = false;
-        chatBox.scrollTop = chatBox.scrollHeight;
+        allData = snapshot.val() || {};
+        updateUserList();
+        if (activeUser) loadChat(activeUser);
     });
 
-    // میسج بھیجنا
-    function sendMsg() {
+    // کسٹمرز کی لسٹ بنانا
+    function updateUserList() {
+        const listDiv = document.getElementById('user-list');
+        const users = new Set();
+        
+        // تمام نام اکٹھے کرنا (صرف کسٹمرز کے)
+        Object.values(allData).forEach(msg => {
+            if (msg.sender === 'customer' && msg.name) users.add(msg.name);
+        });
+
+        listDiv.innerHTML = '';
+        users.forEach(userName => {
+            const card = document.createElement('div');
+            card.className = `user-card ${activeUser === userName ? 'active' : ''}`;
+            card.innerHTML = `<strong>${userName}</strong>`;
+            card.onclick = () => selectUser(userName);
+            listDiv.appendChild(card);
+        });
+    }
+
+    // کسٹمر کو سلیکٹ کرنا
+    function selectUser(userName) {
+        activeUser = userName;
+        document.getElementById('current-user-name').innerText = userName;
+        document.getElementById('chat-footer').style.display = 'flex';
+        updateUserList();
+        loadChat(userName);
+    }
+
+    // صرف منتخب کسٹمر کی چیٹ دکھانا
+    function loadChat(userName) {
+        const window = document.getElementById('chat-window');
+        window.innerHTML = '';
+        
+        Object.values(allData).forEach(msg => {
+            // یا تو یہ اس کسٹمر کا میسج ہو، یا ایڈمن کا وہ میسج ہو جو اس کسٹمر کو بھیجا گیا
+            // (فلحال ہم سادہ فلٹر لگا رہے ہیں جو کسٹمر کے نام سے میچ کرے)
+            if (msg.name === userName || (msg.sender === 'admin' && msg.to === userName)) {
+                const type = msg.sender === 'admin' ? 'admin-msg' : 'customer-msg';
+                window.innerHTML += `<div class="msg ${type}">${msg.text}</div>`;
+            }
+        });
+        window.scrollTop = window.scrollHeight;
+    }
+
+    // جواب بھیجنا
+    function sendReply() {
         const input = document.getElementById('admin-input');
-        if (!input.value.trim()) return;
+        if (!input.value.trim() || !activeUser) return;
+
         db.ref('public_chat').push({
             text: input.value,
             sender: 'admin',
+            to: activeUser, // کس کو بھیج رہے ہیں
+            name: activeUser, // ریکارڈ کے لیے
             time: Date.now()
         });
         input.value = '';
     }
 
-    // ہسٹری ڈیلیٹ کرنا
-    function deleteHistory() {
-        if (confirm("Kya aap tamam purani chat delete karna chahte hain? 🗑️")) {
-            db.ref('public_chat').remove();
-        }
+    function clearAll() {
+        if(confirm("Delete everything?")) db.ref('public_chat').remove();
     }
-
-    document.getElementById('admin-input').addEventListener("keypress", (e) => {
-        if (e.key === "Enter") sendMsg();
-    });
 </script>
 </body>
 </html>
