@@ -1,42 +1,69 @@
 <!DOCTYPE html>
-<html lang="ur">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Chat Admin Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Support Dashboard Pro</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
-        .admin-container { max-width: 900px; margin: 0 auto; background: white; height: 90vh; border-radius: 15px; display: flex; flex-direction: column; shadow: 0 4px 20px rgba(0,0,0,0.1); overflow: hidden; }
-        .header { background: #4f46e5; color: white; padding: 20px; font-size: 20px; font-weight: bold; text-align: center; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #f0f2f5; }
+        .main-container { display: flex; flex-direction: column; height: 100vh; width: 100%; }
         
-        #admin-msgs { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background: #f9fafb; }
-        
-        .msg-row { display: flex; flex-direction: column; max-width: 70%; }
-        .customer-row { align-self: flex-start; }
-        .admin-row { align-self: flex-end; }
-        
-        .bubble { padding: 12px 16px; border-radius: 12px; font-size: 14px; position: relative; }
-        .customer-bubble { background: #ffffff; border: 1px solid #e5e7eb; color: #1f2937; }
-        .admin-bubble { background: #4f46e5; color: white; }
-        
-        .sender-name { font-size: 11px; margin-bottom: 4px; color: #6b7280; font-weight: bold; }
-        .admin-row .sender-name { text-align: right; }
+        .header { background: #075e54; color: white; padding: 12px 15px; flex-shrink: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .header-top { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: bold; }
+        #search-user { width: 100%; padding: 10px 15px; border-radius: 20px; border: none; outline: none; margin-top: 8px; font-size: 14px; box-sizing: border-box; }
 
-        img.chat-img { max-width: 250px; border-radius: 8px; cursor: pointer; border: 2px solid #ddd; margin-top: 5px; }
-        audio { height: 35px; margin-top: 5px; }
+        #main-content { flex: 1; overflow-y: auto; background: white; position: relative; }
+        .user-item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; background: #075e54; color: white; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-weight: bold; }
 
-        .input-area { padding: 20px; background: white; border-top: 1px solid #eee; display: flex; gap: 10px; }
-        input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
-        button { background: #4f46e5; color: white; border: none; padding: 0 25px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        #chat-screen { display: none; flex-direction: column; height: 100%; background: #e5ddd5 url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); }
+        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        
+        .msg { display: flex; flex-direction: column; max-width: 80%; margin-bottom: 2px; }
+        .received { align-self: flex-start; }
+        .sent { align-self: flex-end; }
+        .bubble { padding: 8px 12px; border-radius: 12px; font-size: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); position: relative; word-wrap: break-word; min-width: 60px; }
+        .received .bubble { background: white; border-top-left-radius: 0; }
+        .sent .bubble { background: #dcf8c6; border-top-right-radius: 0; }
+        
+        .msg-info { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 4px; }
+        .time { font-size: 10px; color: #888; }
+        .tick { font-size: 12px; font-weight: bold; }
+        .att-img { max-width: 100%; border-radius: 8px; margin-top: 5px; cursor: pointer; }
+        .file-link { color: #075e54; font-weight: bold; text-decoration: none; display: block; padding: 5px 0; }
+
+        .footer { background: #f0f0f0; flex-shrink: 0; border-top: 1px solid #ddd; padding: 8px; }
+        .input-box { display: flex; gap: 8px; align-items: flex-end; }
+        textarea { flex: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid #ccc; outline: none; font-size: 16px; resize: none; max-height: 120px; min-height: 40px; line-height: 20px; }
+        .send-btn, .attach-btn { background: #075e54; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .attach-btn { background: #5c6bc0; font-size: 22px; }
     </style>
 </head>
 <body>
 
-<div class="admin-container">
-    <div class="header">Support Dashboard (Admin) 🛠️</div>
-    <div id="admin-msgs"></div>
-    <div class="input-area">
-        <input type="text" id="admin-input" placeholder="Type your reply here...">
-        <button id="send-reply">Send Reply</button>
+<div class="main-container">
+    <div class="header">
+        <div class="header-top">
+            <span id="back" style="display:none; cursor:pointer;" onclick="goHome()">←</span>
+            <span id="title">Support Dashboard</span>
+        </div>
+        <input type="text" id="search-user" placeholder="Search for a user..." onkeyup="search()">
+    </div>
+
+    <div id="main-content">
+        <div id="list-view"></div>
+        <div id="chat-screen">
+            <div id="messages"></div>
+        </div>
+    </div>
+
+    <div class="footer" id="chat-footer" style="display:none;">
+        <div class="input-box">
+            <input type="file" id="file-input" style="display: none;" onchange="handleFile(this)">
+            <button class="attach-btn" onclick="document.getElementById('file-input').click()">📎</button>
+            <textarea id="text-input" rows="1" placeholder="Type a message..." oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+            <button class="send-btn" onclick="send()">➤</button>
+        </div>
     </div>
 </div>
 
@@ -51,56 +78,168 @@
     };
     if (!firebase.apps.length) firebase.initializeApp(fbConfig);
     const db = firebase.database();
+    let currentChatUser = null;
 
-    const msgsContainer = document.getElementById('admin-msgs');
-    const replyInput = document.getElementById('admin-input');
-
-    // میسجز دکھانے کا فنکشن
     db.ref('public_chat').on('value', snap => {
-        msgsContainer.innerHTML = '';
+        const users = {};
         snap.forEach(child => {
-            const data = child.val();
-            const isAdmin = data.sender === 'admin';
-            const rowClass = isAdmin ? 'admin-row' : 'customer-row';
-            const bubbleClass = isAdmin ? 'admin-bubble' : 'customer-bubble';
-            
-            let content = '';
-            if(data.type === 'image') {
-                content = `<img src="${data.text}" class="chat-img" onclick="window.open(this.src)">`;
-            } else if(data.type === 'voice') {
-                content = `<audio controls src="${data.text}"></audio>`;
-            } else {
-                content = `<div>${data.text}</div>`;
-            }
-
-            msgsContainer.innerHTML += `
-                <div class="msg-row ${rowClass}">
-                    <span class="sender-name">${isAdmin ? 'You (Admin)' : data.name}</span>
-                    <div class="bubble ${bubbleClass}">${content}</div>
-                </div>
-            `;
+            const d = child.val();
+            const uName = d.name === 'Admin' ? d.replyTo : d.name;
+            if (uName && uName !== 'Admin') users[uName] = d.text;
         });
-        msgsContainer.scrollTop = msgsContainer.scrollHeight;
+
+        const listDiv = document.getElementById('list-view');
+        if (document.getElementById('chat-screen').style.display !== 'flex') {
+            listDiv.innerHTML = '';
+            Object.keys(users).forEach(u => {
+                const item = document.createElement('div');
+                item.className = 'user-item';
+                item.onclick = () => openChat(u);
+                item.innerHTML = `<div class="avatar">${u[0]}</div>
+                                  <div style="flex:1"><b>${u}</b><br><small>${users[u].substring(0,25)}...</small></div>
+                                  <div style="color:red;" onclick="event.stopPropagation(); deleteChat('${u}')">🗑️</div>`;
+                listDiv.appendChild(item);
+            });
+        }
     });
 
-    // ایڈمن کا جواب بھیجنا
-    function sendReply() {
-        const text = replyInput.value.trim();
-        if(!text) return;
-
-        db.ref('public_chat').push({
-            text: text,
-            type: 'text',
-            sender: 'admin',
-            name: 'Admin',
-            time: Date.now()
-        });
-        replyInput.value = '';
+    // Improved Auto-download function
+    function triggerDownload(dataUrl, fileName) {
+        try {
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = fileName || 'support_file_' + Date.now();
+            link.target = '_blank'; 
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(() => {
+                document.body.removeChild(link);
+            }, 150);
+        } catch (err) {
+            console.error("Auto-download failed:", err);
+        }
     }
 
-    document.getElementById('send-reply').onclick = sendReply;
-    replyInput.onkeypress = (e) => { if(e.key === 'Enter') sendReply(); };
-</script>
+    function openChat(user) {
+        currentChatUser = user;
+        document.getElementById('list-view').style.display = 'none';
+        document.getElementById('search-user').style.display = 'none';
+        document.getElementById('chat-screen').style.display = 'flex';
+        document.getElementById('chat-footer').style.display = 'block';
+        document.getElementById('back').style.display = 'block';
+        document.getElementById('title').innerText = user;
+        
+        db.ref('public_chat').off(); 
+        db.ref('public_chat').on('value', snap => {
+            const msgBox = document.getElementById('messages');
+            msgBox.innerHTML = '';
+            snap.forEach(child => {
+                const d = child.val();
+                if (d.name === currentChatUser || (d.sender === 'admin' && d.replyTo === currentChatUser)) {
+                    const isAdmin = d.sender === 'admin';
+                    const time = d.time ? new Date(d.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+                    let content = d.text;
+                    
+                    if(d.type === 'file') {
+                        // Force download if sent by user and not yet downloaded in this session
+                        if (!isAdmin && !sessionStorage.getItem('dl_' + child.key)) {
+                            triggerDownload(d.fileData, d.fileName);
+                            sessionStorage.setItem('dl_' + child.key, 'true');
+                            // Optional: Update status in DB
+                            db.ref('public_chat/' + child.key).update({ status: 'downloaded' });
+                        }
 
+                        if(d.fileType && d.fileType.startsWith('image')) {
+                            content = `<img src="${d.fileData}" class="att-img" onclick="window.open(this.src)">`;
+                        } else {
+                            content = `<a href="${d.fileData}" download="${d.fileName || 'file'}" class="file-link">📁 Downloaded File</a>`;
+                        }
+                    }
+
+                    let tickHtml = isAdmin ? `<span class="tick" style="color: ${d.status === 'seen' || d.status === 'downloaded' ? '#34b7f1' : '#888'}">${d.status === 'seen' || d.status === 'downloaded' ? '✔✔' : '✔'}</span>` : '';
+
+                    msgBox.innerHTML += `<div class="msg ${isAdmin ? 'sent' : 'received'}">
+                        <div class="bubble">${content}
+                            <div class="msg-info">
+                                <span class="time">${time}</span>
+                                ${tickHtml}
+                            </div>
+                        </div>
+                    </div>`;
+                }
+            });
+            msgBox.scrollTop = msgBox.scrollHeight;
+        });
+    }
+
+    function send(customData = null) {
+        const input = document.getElementById('text-input');
+        const msgObj = customData || {
+            text: input.value.trim(), 
+            sender: 'admin', 
+            name: 'Admin', 
+            replyTo: currentChatUser, 
+            time: Date.now(),
+            status: 'sent',
+            type: 'text'
+        };
+
+        if ((!msgObj.text && !msgObj.fileData) || !currentChatUser) return;
+        db.ref('public_chat').push(msgObj);
+        input.value = '';
+        input.style.height = '40px';
+    }
+
+    function handleFile(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const fileData = e.target.result;
+            send({
+                text: "Sent a file: " + file.name,
+                fileData: fileData,
+                fileType: file.type,
+                fileName: file.name,
+                type: 'file',
+                sender: 'admin',
+                name: 'Admin',
+                replyTo: currentChatUser,
+                time: Date.now(),
+                status: 'sent'
+            });
+        };
+        reader.readAsDataURL(file);
+        input.value = '';
+    }
+
+    function goHome() {
+        currentChatUser = null;
+        document.getElementById('list-view').style.display = 'block';
+        document.getElementById('search-user').style.display = 'block';
+        document.getElementById('chat-screen').style.display = 'none';
+        document.getElementById('chat-footer').style.display = 'none';
+        document.getElementById('back').style.display = 'none';
+        document.getElementById('title').innerText = 'Support Dashboard';
+    }
+
+    function deleteChat(user) {
+        if(confirm(`Delete all messages for ${user}?`)) {
+            db.ref('public_chat').once('value', snap => {
+                snap.forEach(child => {
+                    const d = child.val();
+                    if(d.name === user || d.replyTo === user) db.ref('public_chat/'+child.key).remove();
+                });
+            });
+        }
+    }
+
+    function search() {
+        const q = document.getElementById('search-user').value.toLowerCase();
+        document.querySelectorAll('.user-item').forEach(i => {
+            i.style.display = i.innerText.toLowerCase().includes(q) ? 'flex' : 'none';
+        });
+    }
+</script>
 </body>
 </html>
